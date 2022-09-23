@@ -37,58 +37,62 @@ class _FlutterGridNavigatorState extends State<FlutterGridNavigator> {
 
   @override
   Widget build(BuildContext context) {
-    const padding = 24.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const padding = 24.0;
 
-    final mediaQuery = MediaQuery.of(context);
-    final childSize =
-        Size(mediaQuery.size.width * 0.66, mediaQuery.size.height * 0.6);
+        final mediaQuery = MediaQuery.of(context);
+        final childSize = constraints.biggest * 0.66;
 
-    var gridOffset = _calculateCurrentOffset(padding, childSize) +
-        Offset(0, -mediaQuery.padding.top / 2);
+        var gridOffset = _calculateCurrentOffset(padding, childSize) +
+            Offset(0, -mediaQuery.padding.top / 2);
 
-    final offsetTweenDuration = widget.swipeDuration;
-    final cutoutTweenDuration = offsetTweenDuration * 0.5;
+        final offsetTweenDuration = widget.swipeDuration;
+        final cutoutTweenDuration = offsetTweenDuration * 0.5;
 
-    return AnimatedCutoutOverlay(
-      animationKey: ValueKey(_index),
-      cutoutSize: childSize,
-      swipeDirection: _lastSwipeDirection,
-      duration: cutoutTweenDuration,
-      opacity: 0.7,
-      child: SafeArea(
-        bottom: false,
-        child: OverflowBox(
-          maxWidth: _gridSize * childSize.width + padding * (_gridSize - 1),
-          maxHeight: _gridSize * childSize.height + padding * (_gridSize - 1),
-          alignment: Alignment.center,
-          child: EightWaySwipeDetector(
-            onSwipe: (direction) => _onSwipe(direction: direction),
-            threshold: 30,
-            child: TweenAnimationBuilder<Offset>(
-              tween: Tween(begin: gridOffset, end: gridOffset),
-              duration: offsetTweenDuration,
-              curve: Curves.easeOut,
-              builder: (_, value, child) =>
-                  Transform.translate(offset: value, child: child),
-              child: GridView.count(
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: _gridSize,
-                childAspectRatio: childSize.aspectRatio,
-                mainAxisSpacing: padding,
-                crossAxisSpacing: padding,
-                children: List.generate(
-                  widget.grid.length,
-                  (index) => _gridTile(
-                    index: index,
-                    swipeDuration: widget.swipeDuration,
-                    childSize: childSize,
+        return AnimatedCutoutOverlay(
+          animationKey: ValueKey(_index),
+          cutoutSize: childSize,
+          swipeDirection: _lastSwipeDirection,
+          duration: cutoutTweenDuration,
+          opacity: 0.7,
+          child: SafeArea(
+            bottom: false,
+            child: OverflowBox(
+              maxWidth: _gridSize * childSize.width + padding * (_gridSize - 1),
+              maxHeight:
+                  _gridSize * childSize.height + padding * (_gridSize - 1),
+              alignment: Alignment.center,
+              child: EightWaySwipeDetector(
+                onSwipe: (direction) => _onSwipe(direction: direction),
+                threshold: 30,
+                child: TweenAnimationBuilder<Offset>(
+                  tween: Tween(begin: gridOffset, end: gridOffset),
+                  duration: offsetTweenDuration,
+                  curve: Curves.easeOut,
+                  builder: (_, value, child) =>
+                      Transform.translate(offset: value, child: child),
+                  child: GridView.count(
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: _gridSize,
+                    childAspectRatio: childSize.aspectRatio,
+                    mainAxisSpacing: padding,
+                    crossAxisSpacing: padding,
+                    children: List.generate(
+                      widget.grid.length,
+                      (index) => _gridTile(
+                        index: index,
+                        swipeDuration: widget.swipeDuration,
+                        childSize: constraints.biggest,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -168,16 +172,20 @@ class _FlutterGridNavigatorState extends State<FlutterGridNavigator> {
 
     final child = widget.grid[index] ?? const SizedBox.shrink();
 
-    return TweenAnimationBuilder<double>(
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOut,
-      tween: Tween(begin: 1, end: selected ? 1 : 0.9),
-      builder: (_, value, child) => Transform.scale(scale: value, child: child),
-      child: SizedBox(
-        width: childSize.width,
-        height: childSize.height,
-        child: child,
-      ).animate().fade(),
+    return OverflowBox(
+      maxWidth: childSize.width,
+      maxHeight: childSize.height,
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeOut,
+        tween: Tween(begin: 1, end: selected ? 1 : 0.9),
+        builder: (_, value, child) =>
+            Transform.scale(scale: value, child: child),
+        child: Transform.scale(
+          scale: 0.66,
+          child: child.animate().fade(),
+        ),
+      ),
     );
   }
 }
