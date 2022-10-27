@@ -8,12 +8,18 @@ import 'animated_cutout_overlay.dart';
 import 'eight_way_swipe_detector.dart';
 
 class FlutterGridNavigator extends StatefulWidget {
+  final double childScaleFactor;
   final List<Widget?> grid;
+  final ValueChanged<int>? onIndexChanged;
+  final double padding;
   final Duration swipeDuration;
 
   const FlutterGridNavigator({
     Key? key,
+    this.childScaleFactor = 0.66,
     required this.grid,
+    this.onIndexChanged,
+    this.padding = 24,
     this.swipeDuration = const Duration(milliseconds: 300),
   }) : super(key: key);
 
@@ -33,18 +39,18 @@ class _FlutterGridNavigatorState extends State<FlutterGridNavigator> {
     _gridSize = sqrt(widget.grid.length).round();
     _index = ((_gridSize * _gridSize) / 2).round();
     _lastSwipeDirection = Offset.zero;
+
+    widget.onIndexChanged?.call(_index);
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        const padding = 24.0;
-
         final mediaQuery = MediaQuery.of(context);
-        final childSize = constraints.biggest * 0.66;
+        final childSize = constraints.biggest * widget.childScaleFactor;
 
-        var gridOffset = _calculateCurrentOffset(padding, childSize) +
+        var gridOffset = _calculateCurrentOffset(widget.padding, childSize) +
             Offset(0, -mediaQuery.padding.top / 2);
 
         final offsetTweenDuration = widget.swipeDuration;
@@ -59,9 +65,10 @@ class _FlutterGridNavigatorState extends State<FlutterGridNavigator> {
           child: SafeArea(
             bottom: false,
             child: OverflowBox(
-              maxWidth: _gridSize * childSize.width + padding * (_gridSize - 1),
-              maxHeight:
-                  _gridSize * childSize.height + padding * (_gridSize - 1),
+              maxWidth: _gridSize * childSize.width +
+                  widget.padding * (_gridSize - 1),
+              maxHeight: _gridSize * childSize.height +
+                  widget.padding * (_gridSize - 1),
               alignment: Alignment.center,
               child: EightWaySwipeDetector(
                 onSwipe: (direction) => _onSwipe(direction: direction),
@@ -76,8 +83,8 @@ class _FlutterGridNavigatorState extends State<FlutterGridNavigator> {
                     physics: const NeverScrollableScrollPhysics(),
                     crossAxisCount: _gridSize,
                     childAspectRatio: childSize.aspectRatio,
-                    mainAxisSpacing: padding,
-                    crossAxisSpacing: padding,
+                    mainAxisSpacing: widget.padding,
+                    crossAxisSpacing: widget.padding,
                     children: List.generate(
                       widget.grid.length,
                       (index) => _gridTile(
@@ -141,6 +148,8 @@ class _FlutterGridNavigatorState extends State<FlutterGridNavigator> {
     }
 
     setState(() => _index = index);
+
+    widget.onIndexChanged?.call(_index);
   }
 
   /// Determine the required offset to show the current selected index.
@@ -182,7 +191,7 @@ class _FlutterGridNavigatorState extends State<FlutterGridNavigator> {
         builder: (_, value, child) =>
             Transform.scale(scale: value, child: child),
         child: Transform.scale(
-          scale: 0.66,
+          scale: widget.childScaleFactor,
           child: child.animate().fade(),
         ),
       ),
